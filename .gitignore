@@ -1,5 +1,6 @@
 .idea/
-*/migrations/
+**/migrations/*
+!**/migrations/__init__.py
 media/
 db.sqlite3
 *__pycache__*
