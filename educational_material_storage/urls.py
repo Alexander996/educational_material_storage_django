@@ -22,4 +22,5 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path('api/login/', AuthToken.as_view()),
     path('api/users/', include('users.urls')),
+    path('api/', include('books.urls')),
 ]
