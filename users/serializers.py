@@ -35,20 +35,3 @@ class UserSerializer(serializers.ModelSerializer):
         user = User.objects.create(password=make_password(password), **validated_data)
         UserInfo.objects.create(user=user, **user_info)
         return user
-
-
-class UserListSerializer(serializers.ModelSerializer):
-    role = serializers.IntegerField(source='userinfo.role')
-    blocked = serializers.ReadOnlyField(source='userinfo.blocked', read_only=True)
-
-    class Meta:
-        model = User
-        fields = (
-            'id',
-            'username',
-            'role',
-            'first_name',
-            'last_name',
-            'email',
-            'blocked',
-        )

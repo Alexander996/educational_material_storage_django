@@ -6,7 +6,8 @@ from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 
 from educational_material_storage.utils import CRUModelViewSet, transaction_atomic
-from users.serializers import UserSerializer, UserListSerializer
+from users.serializers import UserSerializer
+from users.user_list_serializer import UserListSerializer
 
 
 class UserViewSet(CRUModelViewSet):
