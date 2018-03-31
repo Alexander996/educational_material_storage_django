@@ -78,6 +78,17 @@ class BookViewSet(viewsets.ModelViewSet):
         UserBook.objects.create(book=book, user=request.user.userinfo)
         return Response()
 
+    @detail_route(methods=['post'], url_path='remove')
+    @transaction_atomic
+    def remove_book(self, request, pk=None):
+        book = self.get_object()
+        try:
+            user_book = UserBook.objects.get(book=book, user=request.user.userinfo)
+        except UserBook.DoesNotExist:
+            raise ValidationError('You have not this book')
+        user_book.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
     @list_route(url_path='search')
     def book_search(self, request):
         text = request.GET.get('text')
