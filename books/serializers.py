@@ -1,8 +1,26 @@
+from django.contrib.auth.models import User
 from rest_framework import serializers
 from rest_framework.exceptions import ValidationError
 
 from books.models import Category, Book, CategoryBook
-from users.serializers import UserSerializer
+from users.models import UserBook
+
+
+class UserListSerializer(serializers.ModelSerializer):
+    role = serializers.IntegerField(source='userinfo.role')
+    blocked = serializers.ReadOnlyField(source='userinfo.blocked', read_only=True)
+
+    class Meta:
+        model = User
+        fields = (
+            'id',
+            'username',
+            'role',
+            'first_name',
+            'last_name',
+            'email',
+            'blocked',
+        )
 
 
 class CategorySerializer(serializers.ModelSerializer):
@@ -24,7 +42,7 @@ class CategoryBookSerializer(serializers.ModelSerializer):
 
 
 class BookSerializer(serializers.ModelSerializer):
-    owner = UserSerializer(read_only=True)
+    owner = UserListSerializer(read_only=True)
     categories = CategoryBookSerializer(source='categorybook_set', many=True)
     file = serializers.FileField(read_only=True)
 
@@ -39,6 +57,7 @@ class BookSerializer(serializers.ModelSerializer):
             raise ValidationError('"categories" can not be empty')
 
         book = Book.objects.create(**validated_data)
+        UserBook.objects.create(book=book, user=self.context['request'].user.userinfo)
         for category in categories:
             CategoryBook.objects.create(book=book, **category)
 

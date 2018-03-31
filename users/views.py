@@ -6,11 +6,10 @@ from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 
 from educational_material_storage.utils import CRUModelViewSet, transaction_atomic
-from users.serializers import UserSerializer
+from users.serializers import UserSerializer, UserListSerializer
 
 
 class UserViewSet(CRUModelViewSet):
-    serializer_class = UserSerializer
     queryset = User.objects.all()
 
     def get_permissions(self):
@@ -18,6 +17,12 @@ class UserViewSet(CRUModelViewSet):
             return [AllowAny()]
         else:
             return super().get_permissions()
+
+    def get_serializer_class(self):
+        if self.action == 'list':
+            return UserListSerializer
+        else:
+            return UserSerializer
 
     @transaction_atomic
     def create(self, request, *args, **kwargs):

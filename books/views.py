@@ -2,7 +2,7 @@ import json
 
 from django.db.models import Q
 from rest_framework import viewsets, status
-from rest_framework.decorators import list_route
+from rest_framework.decorators import list_route, detail_route
 from rest_framework.exceptions import ValidationError
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.response import Response
@@ -10,6 +10,7 @@ from rest_framework.response import Response
 from books.models import Category, Book
 from books.serializers import CategorySerializer, BookSerializer
 from educational_material_storage.utils import validate_request, transaction_atomic, paginate, filter_by_category
+from users.models import UserBook
 
 
 class CategoryViewSet(viewsets.ModelViewSet):
@@ -69,6 +70,13 @@ class BookViewSet(viewsets.ModelViewSet):
         book.deleted = True
         book.save()
         return Response(status=status.HTTP_204_NO_CONTENT)
+
+    @detail_route(methods=['post'], url_path='take')
+    @transaction_atomic
+    def take_book(self, request, pk=None):
+        book = self.get_object()
+        UserBook.objects.create(book=book, user=request.user.userinfo)
+        return Response()
 
     @list_route(url_path='search')
     def book_search(self, request):

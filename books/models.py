@@ -26,3 +26,6 @@ class Book(models.Model):
 class CategoryBook(models.Model):
     book = models.ForeignKey(Book, on_delete=models.PROTECT)
     category = models.ForeignKey(Category, on_delete=models.PROTECT)
+
+    class Meta:
+        unique_together = ('book', 'category')
