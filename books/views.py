@@ -1,8 +1,15 @@
+import json
+
+from django.db.models import Q
 from rest_framework import viewsets, status
+from rest_framework.decorators import list_route
+from rest_framework.exceptions import ValidationError
+from rest_framework.pagination import PageNumberPagination
 from rest_framework.response import Response
 
-from books.models import Category
-from books.serializers import CategorySerializer
+from books.models import Category, Book
+from books.serializers import CategorySerializer, BookSerializer
+from educational_material_storage.utils import validate_request, transaction_atomic, paginate, filter_by_category
 
 
 class CategoryViewSet(viewsets.ModelViewSet):
@@ -19,3 +26,60 @@ class CategoryViewSet(viewsets.ModelViewSet):
         category.deleted = True
         category.save()
         return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+class BookViewSet(viewsets.ModelViewSet):
+    serializer_class = BookSerializer
+
+    def get_queryset(self):
+        if self.action == 'list':
+            q = filter_by_category(self.request)
+            q &= Q(deleted=False)
+            return Book.objects.filter(q).distinct()
+        else:
+            return Book.objects.all()
+
+    def perform_create(self, serializer):
+        serializer.save(owner=self.request.user)
+
+    @transaction_atomic
+    def create(self, request, *args, **kwargs):
+        if request.content_type == 'application/json':
+            raise ValidationError('Use "multipart/form-data", not "application/json"')
+
+        data = request.data
+        validate_request(data, 'file', 'author', 'name', 'categories')
+        json_data = {}
+
+        file = data.pop('file')[0]
+        categories = json.JSONDecoder().decode(data.pop('categories')[0])
+        json_data['categories'] = categories
+
+        for attr, value in data.items():
+            json_data[attr] = value
+
+        serializer = self.get_serializer(data=json_data)
+        serializer.is_valid(raise_exception=True)
+        serializer.save(owner=request.user, file=file)
+        headers = self.get_success_headers(serializer.data)
+        return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
+
+    def destroy(self, request, *args, **kwargs):
+        book = self.get_object()
+        book.deleted = True
+        book.save()
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
+    @list_route(url_path='search')
+    def book_search(self, request):
+        text = request.GET.get('text')
+        if text is None:
+            raise ValidationError(dict(detail='Field "text" is empty'))
+
+        q = (Q(name__icontains=text) |
+             Q(author__icontains=text) |
+             Q(categories__name__icontains=text))
+
+        q &= Q(deleted=False)
+        books = Book.objects.filter(q).distinct()
+        return paginate(PageNumberPagination, BookSerializer, books, request)
