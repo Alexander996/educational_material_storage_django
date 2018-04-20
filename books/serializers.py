@@ -52,4 +52,7 @@ class BookSerializer(serializers.ModelSerializer):
         for category in ret['categories']:
             categories.append(category['category'])
         ret['categories'] = categories
+
+        userbook = instance.userbook_set.filter(user=self.context['request'].user.userinfo)
+        ret['elected'] = userbook.count() > 0
         return ret
