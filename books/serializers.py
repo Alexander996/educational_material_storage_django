@@ -55,7 +55,7 @@ class BookSerializer(serializers.ModelSerializer):
 
         request = self.context.get('request')
         if request is None:
-            ret['elected'] = None
+            ret['elected'] = True
         else:
             userbook = instance.userbook_set.filter(user=request.user.userinfo)
             ret['elected'] = userbook.count() > 0
