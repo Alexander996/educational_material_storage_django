@@ -53,6 +53,10 @@ class BookSerializer(serializers.ModelSerializer):
             categories.append(category['category'])
         ret['categories'] = categories
 
-        userbook = instance.userbook_set.filter(user=self.context['request'].user.userinfo)
-        ret['elected'] = userbook.count() > 0
+        request = self.context.get('request')
+        if request is None:
+            ret['elected'] = None
+        else:
+            userbook = instance.userbook_set.filter(user=request.user.userinfo)
+            ret['elected'] = userbook.count() > 0
         return ret
