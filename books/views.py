@@ -15,6 +15,7 @@ from users.models import UserBook
 
 class CategoryViewSet(viewsets.ModelViewSet):
     serializer_class = CategorySerializer
+    pagination_class = PageNumberPagination
 
     def get_queryset(self):
         if self.action == 'list':
